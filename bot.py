@@ -175,7 +175,7 @@ def no_contact(bot, update):
     uid = update.message.from_user.id
     bot.sendChatAction(uid, action=typing)
     bot.sendSticker(uid, sticker=texts.sticker)
-    bot.sendMessage(uid, text=texts.contact_err, parse_mode="HTML", reply_markup=kbd(send_contact_kbd))
+    bot.sendMessage(uid, text=texts.contact_err, parse_mode="HTML", reply_markup=kbd(send_contact_kbd + [texts.main_menu_btn]))
 
 
 def order_confirm(bot, update, user_data):
@@ -339,7 +339,7 @@ def info_admin(bot, update):
 
 
 def catalog_user(bot, update):
-    return ans(text=texts.select_category, keyboard=catalog.categories_kbd, next_state="CATALOG")(bot, update)
+    return ans(text=texts.select_category, keyboard=catalog.categories_kbd + [texts.main_menu_btn], next_state="CATALOG")(bot, update)
 
 
 def catalog_item(bot, update, user_data=None, text=None, inlinekeyboard=None, next_state=None, subcat=None):
@@ -545,7 +545,7 @@ def main():
                         RegexHandler(texts.info_btn_user, info_user)],
 
         "CATALOG": [
-            RegexHandler(btn, ans(text=texts.select_subcategory % btn, keyboard=catalog.subcat_kbd[btn],
+            RegexHandler(btn, ans(text=texts.select_subcategory % btn, keyboard=catalog.subcat_kbd[btn] + [texts.main_menu_btn],
                                   next_state="CATALOG_" + btn))
             for btn in flatten(catalog.categories_kbd)],
 
@@ -600,9 +600,11 @@ def main():
                                     for btn in flatten(catalog.subcat_kbd[cat])]
 
     command_handlers = [CommandHandler('start', start, pass_user_data=True), ]
+    main_regex_handler = [RegexHandler(texts.main_menu_btn, lambda b, u: ans(
+                             text=texts.in_main_menu, keyboard=main_kbd_user, next_state="MAIN_MENU_U")(b, u)),]
 
     # inline buttons and slash-commands must be handled from any chat state
-    states = {k: v + command_handlers + [cqh] for k, v in states.items()}
+    states = {k: v + command_handlers + main_regex_handler + [cqh] for k, v in states.items()}
 
     # Add conversation handler with the states
     conversation_handler = ConversationHandler(entry_points=command_handlers, states=states, fallbacks=[])
